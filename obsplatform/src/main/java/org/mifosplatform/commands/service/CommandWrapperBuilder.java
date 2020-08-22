@@ -3411,6 +3411,14 @@ public class CommandWrapperBuilder {
 		return this;
 	}
 	
+	public CommandWrapperBuilder createEntityPayment(Long clientId) {
+		this.actionName = "CREATE";
+		this.entityName = "ENTITYPAYMENT";
+		this.entityId = clientId;
+		this.href = "/entitypayments/" + clientId;
+		return this;
+	}
+	
 	public CommandWrapperBuilder createAccountNumberFormat() {
         this.actionName = "CREATE";
         this.entityName = AccountNumberFormatConstants.ENTITY_NAME.toUpperCase();

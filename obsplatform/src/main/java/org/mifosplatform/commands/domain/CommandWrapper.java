@@ -949,7 +949,7 @@ public class CommandWrapper {
 		public boolean isConfirmPayment() {
 			return this.actionName.equalsIgnoreCase("CONFIRM");
 		}
-
+		
 		public boolean isChangePlan() {
 			return this.actionName.equalsIgnoreCase("CHANGEPLAN") && this.entityName.equalsIgnoreCase("ORDER");
 		}
@@ -1359,6 +1359,10 @@ public class CommandWrapper {
 	
 	public boolean isReferalResource() {
         return this.entityName.equalsIgnoreCase("REFERAL");
+    }
+	
+	public boolean isEntityPaymentResource() {
+        return this.entityName.equalsIgnoreCase("ENTITYPAYMENT");
     }
 	//command type annotation functionality implemented,please refer once
 

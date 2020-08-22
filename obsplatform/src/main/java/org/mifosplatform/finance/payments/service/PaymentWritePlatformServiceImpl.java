@@ -28,6 +28,10 @@ import org.mifosplatform.finance.creditdistribution.domain.CreditDistribution;
 import org.mifosplatform.finance.creditdistribution.domain.CreditDistributionRepository;
 import org.mifosplatform.finance.depositandrefund.domain.DepositAndRefund;
 import org.mifosplatform.finance.depositandrefund.domain.DepositAndRefundRepository;
+import org.mifosplatform.finance.entitypayments.data.EntityPaymentData;
+import org.mifosplatform.finance.entitypayments.domain.EntityPayment;
+import org.mifosplatform.finance.entitypayments.domain.EntityPaymentRepository;
+import org.mifosplatform.finance.entitypayments.service.EntityPaymentReadPlatformService;
 import org.mifosplatform.finance.payments.domain.ChequePayment;
 import org.mifosplatform.finance.payments.domain.ChequePaymentRepository;
 import org.mifosplatform.finance.payments.domain.Payment;
@@ -65,7 +69,6 @@ import org.mifosplatform.organisation.referal.data.ReferalData;
 import org.mifosplatform.organisation.referal.domain.Referal;
 import org.mifosplatform.organisation.referal.domain.ReferalRepository;
 import org.mifosplatform.organisation.referal.service.ReferalReadPlatformService;
-import org.mifosplatform.portfolio.client.api.ClientApiConstants;
 import org.mifosplatform.portfolio.client.data.ClientData;
 import org.mifosplatform.portfolio.client.domain.Client;
 import org.mifosplatform.portfolio.client.domain.ClientRepository;
@@ -124,6 +127,8 @@ public class PaymentWritePlatformServiceImpl implements PaymentWritePlatformServ
 	private final CommissionPaymentWritePlatformService commissionPaymentWritePlatformService;
 	private final ConfigurationRepository configurationRepository;
 	private final CodeValueReadPlatformService  codeValueReadPlatformService;
+	private final EntityPaymentRepository entityPaymentRepository;
+	private final EntityPaymentReadPlatformService entitypaymentReadPlatformService;
 
 	@Autowired
 	public PaymentWritePlatformServiceImpl(final PlatformSecurityContext context,final PaymentRepository paymentRepository,
@@ -141,7 +146,8 @@ public class PaymentWritePlatformServiceImpl implements PaymentWritePlatformServ
 			final ReadWriteNonCoreDataService readWriteNonCoreDataService, final ToApiJsonSerializer<GenericResultsetData> toApiJsonSerializer,
 			final ReferalRepository referalRepository, final ClientReadPlatformService clientReadPlatformService,
 			final CommissionPaymentWritePlatformService commissionPaymentWritePlatformService,
-			final ConfigurationRepository configurationRepository, final CodeValueReadPlatformService  codeValueReadPlatformService) {
+			final ConfigurationRepository configurationRepository, final CodeValueReadPlatformService  codeValueReadPlatformService,
+			final EntityPaymentRepository entityPaymentRepository, final EntityPaymentReadPlatformService entitypaymentReadPlatformService) {
 		
 		this.context = context;
 		this.fromApiJsonHelper=fromApiJsonHelper;
@@ -169,6 +175,8 @@ public class PaymentWritePlatformServiceImpl implements PaymentWritePlatformServ
 		this.commissionPaymentWritePlatformService = commissionPaymentWritePlatformService;
 		this.configurationRepository = configurationRepository;
 		this.codeValueReadPlatformService = codeValueReadPlatformService;
+		this.entityPaymentRepository = entityPaymentRepository;
+		this.entitypaymentReadPlatformService = entitypaymentReadPlatformService;
 		
 	}
 
@@ -309,6 +317,18 @@ public class PaymentWritePlatformServiceImpl implements PaymentWritePlatformServ
 				
 			}
 			
+			final Long officeId=command.longValueOfParameterNamed("officeId");
+			EntityPaymentData retrieveEntityPayment = this.entitypaymentReadPlatformService.retriveEntityPaymentsData(clientId, officeId);
+			if(retrieveEntityPayment != null){
+				EntityPayment entityPayment = this.entityPaymentRepository.findOne(retrieveEntityPayment.getId());
+				BigDecimal totalPayments = retrieveEntityPayment.getOfficePaymentAmount();
+				totalPayments = totalPayments.add(debitAmount);
+				entityPayment.setOfficePaymentAmount(totalPayments);
+				
+				this.entityPaymentRepository.save(entityPayment);
+			}
+			
+			
 			if(clientBalance != null){
 				clientBalance.updateBalance("CREDIT",debitAmount,'Y');
 			}
@@ -400,6 +420,37 @@ public class PaymentWritePlatformServiceImpl implements PaymentWritePlatformServ
 				}
 				
 				
+			}
+			
+			EntityPaymentData retrieveEntityPayment = this.entitypaymentReadPlatformService.retriveEntityPaymentsData(clientId, payment.getOfficeId());
+			if(retrieveEntityPayment == null){
+				BigDecimal debitAmnt = BigDecimal.ZERO;
+				if(useWalletAmount && (level == Long.valueOf(1))){
+					debitAmnt = walletAmount;
+				}
+				EntityPayment entityPaymentData = new EntityPayment(clientId, payment.getOfficeId(), fromClient.getDisplayName(), debitAmnt, commissionAmount,
+						commissionAmount.subtract(debitAmnt), BigDecimal.ZERO);
+				this.entityPaymentRepository.save(entityPaymentData);
+			}else if(retrieveEntityPayment != null){
+				EntityPayment entityPayment = this.entityPaymentRepository.findOne(retrieveEntityPayment.getId());
+				BigDecimal drAmount = retrieveEntityPayment.getTotalOfficeDR();
+				if(useWalletAmount && (level == Long.valueOf(1))){
+					drAmount = drAmount.add(walletAmount);
+				}
+				BigDecimal crAmount = retrieveEntityPayment.getTotalOfficeCR();
+				crAmount = crAmount.add(commissionAmount);
+				BigDecimal totalOfcAmount = (crAmount).subtract(drAmount);
+				entityPayment.setTotalOfficeDR(drAmount);
+				entityPayment.setTotalOfficeCR(crAmount);
+				entityPayment.setTotalOfficeAmount(totalOfcAmount);
+				
+				if(Long.valueOf(referalRecord.getExternalId()) == payment.getClientId()){
+					BigDecimal totalPayments = retrieveEntityPayment.getOfficePaymentAmount();
+					totalPayments = totalPayments.add(payment.getAmountPaid());
+					entityPayment.setOfficePaymentAmount(totalPayments);
+				}
+				
+				this.entityPaymentRepository.save(entityPayment);
 			}
 			
 			if(referalData.getParentId() != null){
@@ -520,6 +571,25 @@ public class PaymentWritePlatformServiceImpl implements PaymentWritePlatformServ
 				}else if("Flat".equalsIgnoreCase(codeValueData.getName())){
 					commissionAmountSave(Long.valueOf(payment.getPaymodeCode()), payment.getClientId(), payment, new BigDecimal(row.getDouble(2)), 1, clientData, useWallet, walletAmount);
 				}
+			}else{
+				EntityPaymentData retrieveEntityPayment = this.entitypaymentReadPlatformService.retriveEntityPaymentsData(payment.getClientId(), payment.getOfficeId());
+				if(retrieveEntityPayment != null){
+					EntityPayment entityPayment = this.entityPaymentRepository.findOne(retrieveEntityPayment.getId());
+					BigDecimal drAmount = retrieveEntityPayment.getTotalOfficeDR();
+					if(useWallet){
+						drAmount = drAmount.add(walletAmount);
+					}
+					BigDecimal crAmount = retrieveEntityPayment.getTotalOfficeCR();
+					BigDecimal totalOfcAmount = (crAmount).subtract(drAmount);
+					entityPayment.setTotalOfficeDR(drAmount);
+					entityPayment.setTotalOfficeAmount(totalOfcAmount);
+					
+					BigDecimal totalPayments = retrieveEntityPayment.getOfficePaymentAmount();
+					totalPayments = totalPayments.add(payment.getAmountPaid());
+					entityPayment.setOfficePaymentAmount(totalPayments);
+					
+					this.entityPaymentRepository.save(entityPayment);
+				}
 			}
 			
 			ClientBalance clientBalance=this.clientBalanceRepository.findByClientId(payment.getClientId());
@@ -543,7 +613,8 @@ public class PaymentWritePlatformServiceImpl implements PaymentWritePlatformServ
 				return CommandProcessingResult.empty();
 			}
 		}
-	
+    
+   
 	private void updatePartnerBalance(final Office office,final Payment payment) {
 
 		final String accountType = "PAYMENTS";

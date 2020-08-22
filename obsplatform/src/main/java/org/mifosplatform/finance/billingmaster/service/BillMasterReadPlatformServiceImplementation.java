@@ -365,7 +365,7 @@ public class BillMasterReadPlatformServiceImplementation implements BillMasterRe
 		        }
 		        
 		        if(officeId != null){
-		        	sqlBuilder.append(" and cl.office_id = "+officeId);
+		        	sqlBuilder.append(" and ft.office_id = "+officeId);
 		        }
 		   
 		        if (searchTransactionHistory.isLimited()) {

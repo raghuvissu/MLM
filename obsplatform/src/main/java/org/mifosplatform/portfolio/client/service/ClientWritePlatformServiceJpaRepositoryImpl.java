@@ -34,6 +34,10 @@ import org.mifosplatform.commands.service.PortfolioCommandSourceWritePlatformSer
 import org.mifosplatform.crm.service.CrmServices;
 import org.mifosplatform.finance.clientbalance.domain.ClientBalance;
 import org.mifosplatform.finance.clientbalance.domain.ClientBalanceRepository;
+import org.mifosplatform.finance.entitypayments.data.EntityPaymentData;
+import org.mifosplatform.finance.entitypayments.domain.EntityPayment;
+import org.mifosplatform.finance.entitypayments.domain.EntityPaymentRepository;
+import org.mifosplatform.finance.entitypayments.service.EntityPaymentReadPlatformService;
 import org.mifosplatform.infrastructure.accountnumberformat.domain.AccountNumberFormat;
 import org.mifosplatform.infrastructure.accountnumberformat.domain.AccountNumberFormatRepositoryWrapper;
 import org.mifosplatform.infrastructure.accountnumberformat.domain.EntityAccountType;
@@ -166,6 +170,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 	private final AccountNumberGenerator accountNumberGenerator;
 	private final ClientBalanceRepository clientBalanceRepository;
 	private final OfficeReadPlatformService ofcReadPlatformService;
+	private final EntityPaymentRepository entityPaymentRepository;
+	private final EntityPaymentReadPlatformService entitypaymentReadPlatformService;
     
    
 
@@ -187,7 +193,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
             final CrmServices crmServices, final  ReferalReadPlatformService  referalReadPlatformService,
             final ReadWriteNonCoreDataService readWriteNonCoreDataService, final ToApiJsonSerializer<GenericResultsetData> toApiJsonSerializer, final ReferalRepository referalRepository,
             final AccountNumberFormatRepositoryWrapper accountNumberFormatRepository, final AccountNumberGenerator accountNumberGenerator,
-            final ClientBalanceRepository clientBalanceRepository, final OfficeReadPlatformService ofcReadPlatformService) {
+            final ClientBalanceRepository clientBalanceRepository, final OfficeReadPlatformService ofcReadPlatformService,
+            final EntityPaymentRepository entityPaymentRepository, final EntityPaymentReadPlatformService entitypaymentReadPlatformService) {
     	
         this.context = context;
         this.ProvisioningWritePlatformService=ProvisioningWritePlatformService;
@@ -226,6 +233,8 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 		this.accountNumberGenerator = accountNumberGenerator;
 		this.clientBalanceRepository = clientBalanceRepository;
 		this.ofcReadPlatformService = ofcReadPlatformService;
+		this.entityPaymentRepository = entityPaymentRepository;
+		this.entitypaymentReadPlatformService = entitypaymentReadPlatformService;
     }
 
     @Transactional
@@ -703,9 +712,22 @@ public class ClientWritePlatformServiceJpaRepositoryImpl implements ClientWriteP
 				if(clientBalance != null){
 					clientBalance.updateBalance("ADD",registrationAmount,'Y');
 					this.clientBalanceRepository.saveAndFlush(clientBalance);
-				}
-				
-				
+				}		
+			}
+			
+			EntityPaymentData retrieveEntityPayment = this.entitypaymentReadPlatformService.retriveEntityPaymentsData(clientId, officeId);
+			if(retrieveEntityPayment == null){
+				EntityPayment entityPaymentData = new EntityPayment(clientId, officeId, clientName, BigDecimal.ZERO, registrationAmount,
+						registrationAmount, BigDecimal.ZERO);
+				this.entityPaymentRepository.save(entityPaymentData);
+			}else if(retrieveEntityPayment != null){
+				EntityPayment entityPayment = this.entityPaymentRepository.findOne(retrieveEntityPayment.getId());
+				BigDecimal crAmount = retrieveEntityPayment.getTotalOfficeCR();
+				crAmount = crAmount.add(registrationAmount);
+				BigDecimal totalOfcAmount = (crAmount).subtract(retrieveEntityPayment.getTotalOfficeDR());
+				entityPayment.setTotalOfficeCR(crAmount);
+				entityPayment.setTotalOfficeAmount(totalOfcAmount);
+				this.entityPaymentRepository.save(entityPayment);
 			}
 			
 		}

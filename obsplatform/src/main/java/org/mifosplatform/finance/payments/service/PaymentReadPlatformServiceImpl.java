@@ -8,7 +8,6 @@ import java.util.Date;
 import java.util.List;
 
 import org.joda.time.LocalDate;
-import org.mifosplatform.billing.invoice.data.InvoiceData;
 import org.mifosplatform.finance.payments.data.McodeData;
 import org.mifosplatform.finance.payments.data.PaymentData;
 import org.mifosplatform.infrastructure.core.api.JsonCommand;
@@ -204,6 +203,5 @@ private static final class DepositMapper implements RowMapper<PaymentData> {
 
 	}
 }
-
 
 }
