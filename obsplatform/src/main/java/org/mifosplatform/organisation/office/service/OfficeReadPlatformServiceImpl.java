@@ -59,7 +59,7 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
         public String officeSchema() {
             return "o.id AS id,o.name AS name,"
             	       +NAMEDECORATEDBASEON_HIERARCHY+
-            	       "AS nameDecorated,o.external_id AS externalId,o.opening_date AS openingDate,o.hierarchy AS hierarchy," +
+            	       "AS nameDecorated,o.external_id AS externalId,o.opening_date AS openingDate,o.hierarchy AS hierarchy, o.is_enabled AS isEnabled, " +
             	       "parent.id AS parentId,parent.name AS parentName,c.code_value as officeType, ifnull(b.balance_amount,0 )as balance, " +
             	       "od.state as state,od.city as city,od.country as country,od.phone_number as phoneNumber,od.office_number as officeNumber, " +
             	       "od.email_id as email,od.address_name as addressName,od.contact_person as contactPerson,od.zip as zip,od.business_type as businessType " +
@@ -76,6 +76,7 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
             final String externalId = resultSet.getString("externalId");
             final LocalDate openingDate = JdbcSupport.getLocalDate(resultSet, "openingDate");
             final String hierarchy = resultSet.getString("hierarchy");
+            final String isEnabled = resultSet.getString("isEnabled");
             final Long parentId = JdbcSupport.getLong(resultSet, "parentId");
             final String parentName = resultSet.getString("parentName");
             final String officeType = resultSet.getString("officeType");
@@ -91,14 +92,15 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
         	final String zip =resultSet.getString("zip");
         	final String businessType =resultSet.getString("businessType");
 
-            return new OfficeData(id, name, nameDecorated, externalId, openingDate, hierarchy, parentId, parentName, null, null, officeType,balance,city,state,country,email,phoneNumber,officeNumber,addressName,contactPerson,zip,businessType);
+            return new OfficeData(id, name, nameDecorated, externalId, openingDate, hierarchy, parentId, parentName, null, null, 
+            		officeType,balance,city,state,country,email,phoneNumber,officeNumber,addressName,contactPerson,zip,businessType, isEnabled);
         }
     }
 
     private static final class OfficeDropdownMapper implements RowMapper<OfficeData> {
 
         public String schema() {
-            return " o.id as id, " + NAMEDECORATEDBASEON_HIERARCHY + " as nameDecorated, o.name as name, o.external_id AS externalId from m_office o ";
+            return " o.id as id, " + NAMEDECORATEDBASEON_HIERARCHY + " as nameDecorated, o.name as name, o.external_id AS externalId, o.is_enabled AS isEnabled from m_office o ";
         }
 
         @Override
@@ -108,8 +110,9 @@ public class OfficeReadPlatformServiceImpl implements OfficeReadPlatformService 
             final String name = resultSet.getString("name");
             final String nameDecorated = resultSet.getString("nameDecorated");
             final String externalId = resultSet.getString("externalId");
+            final String isEnabled = resultSet.getString("isEnabled");
 
-            return OfficeData.dropdown(id, name, nameDecorated, externalId);
+            return OfficeData.dropdown(id, name, nameDecorated, externalId, isEnabled);
         }
     }
 

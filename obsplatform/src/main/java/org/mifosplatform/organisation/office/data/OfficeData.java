@@ -43,7 +43,7 @@ public class OfficeData {
 	private String contactPerson;
 	private String zip;
 	private String businessType;
-	
+	private String isEnabled;
     
     private final Collection<OfficeData> allowedParents;
     private final Collection<CodeValueData> officeTypes;
@@ -51,27 +51,29 @@ public class OfficeData {
     Collection<MCodeData> businessTypes;
     
 
-    public static OfficeData dropdown(final Long id, final String name, final String nameDecorated, final String externalId) {
+    public static OfficeData dropdown(final Long id, final String name, final String nameDecorated, final String externalId, final String isEnabled) {
     	
 
-        return new OfficeData(id, name, nameDecorated, externalId, null, null, null, null, null,null,null,null,null,null,null,null,null,null,null,null,null,null);
+        return new OfficeData(id, name, nameDecorated, externalId, null, null, null, null, null,null,null,null,null,null,null,null,null,null,null,null,null,null, isEnabled);
     }
 
     public static OfficeData template(final Collection<OfficeData> parentLookups, final LocalDate defaultOpeningDate, final Collection<CodeValueData> officeTypes) {
     	
-        return new OfficeData(null, null, null, null, defaultOpeningDate, null, null, null, parentLookups,officeTypes,null,null,null,null,null,null,null,null,null,null,null,null);
+        return new OfficeData(null, null, null, null, defaultOpeningDate, null, null, null, parentLookups,officeTypes,null,null,null,null,null,null,null,null,null,null,null,null, null);
     }
 
     public static OfficeData appendedTemplate(final OfficeData office, final Collection<OfficeData> allowedParents, final Collection<CodeValueData> codeValueDatas) {
     	
         return new OfficeData(office.id, office.name, office.nameDecorated, office.externalId, office.openingDate, office.hierarchy,
-                office.parentId, office.parentName, allowedParents,codeValueDatas,office.officeType,office.balance,office.city,office.state,office.country,office.email,office.phoneNumber,office.officeNumber,office.addressName,office.contactPerson,office.zip,office.businessType);
+                office.parentId, office.parentName, allowedParents,codeValueDatas,office.officeType,office.balance,office.city,office.state,office.country,office.email,office.phoneNumber,
+                office.officeNumber,office.addressName,office.contactPerson,office.zip,office.businessType, office.isEnabled);
     }
 
     public OfficeData(final Long id, final String name, final String nameDecorated, final String externalId, final LocalDate openingDate,
             final String hierarchy, final Long parentId, final String parentName, final Collection<OfficeData> allowedParents, 
             final Collection<CodeValueData> codeValueDatas, final String officeType, BigDecimal balance,final String city,
-            final String state,final String country,final String email,final String phoneNumber,final String officeNumber,final String addressName,final String contactPerson,final String zip,final String businessType) {
+            final String state,final String country,final String email,final String phoneNumber,final String officeNumber,final String addressName,
+            final String contactPerson,final String zip,final String businessType, final String isEnabled) {
     	
         this.id = id;
         this.name = name;
@@ -95,6 +97,7 @@ public class OfficeData {
         this.contactPerson=contactPerson;
         this.zip=zip;
         this.businessType=businessType;
+        this.isEnabled = isEnabled;
         
     }
 
@@ -138,6 +141,13 @@ public class OfficeData {
 	public void setBusinessTypes(Collection<MCodeData> businessTypes) {
 		this.businessTypes = businessTypes;
 	}
-    
+
+	public String getIsEnabled() {
+		return isEnabled;
+	}
+
+	public void setIsEnabled(String isEnabled) {
+		this.isEnabled = isEnabled;
+	}
     
 }

@@ -78,6 +78,9 @@ public class Office extends AbstractPersistable<Long> {
 	
 	@Column(name = "po_id", length = 20)
     private String poid;
+	
+	@Column(name = "is_enabled")
+	private String isEnabled;
 
 
 	public static Office headOffice(final String name, final LocalDate openingDate, final String externalId) {
@@ -202,6 +205,13 @@ public class Office extends AbstractPersistable<Long> {
             final String newValue = command.stringValueOfParameterNamed(partnernameParamName);
             actualChanges.put(partnernameParamName, newValue);
             this.name = newValue;
+        }
+        
+        final String isEnabledParamName = "isEnabled";
+        if (command.isChangeInStringParameterNamed(isEnabledParamName, this.isEnabled)) {
+            final String newValue = command.stringValueOfParameterNamed(isEnabledParamName);
+            actualChanges.put(isEnabledParamName, newValue);
+            this.isEnabled = newValue;
         }
 
         return actualChanges;
@@ -352,7 +362,13 @@ public class Office extends AbstractPersistable<Long> {
 	public void setPoid(String poid) {
 		this.poid = poid;
 	}
-	
-	
+
+	public String getIsEnabled() {
+		return isEnabled;
+	}
+
+	public void setIsEnabled(String isEnabled) {
+		this.isEnabled = isEnabled;
+	}
 	
 }

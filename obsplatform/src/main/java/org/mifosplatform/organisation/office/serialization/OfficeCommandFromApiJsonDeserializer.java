@@ -38,7 +38,7 @@ public final class OfficeCommandFromApiJsonDeserializer {
      */
     private final Set<String> supportedParameters = new HashSet<String>(Arrays.asList("name", "parentId", "openingDate", "externalId",
             "locale", "dateFormat", "officeType","officeNumber","phoneNumber","email","city","state","country",
-            "addressName","contactPerson","zip","businessType", "registrationAmount"));
+            "addressName","contactPerson","zip","businessType", "registrationAmount", "isEnabled"));
 
     private final FromJsonHelper fromApiJsonHelper;
 

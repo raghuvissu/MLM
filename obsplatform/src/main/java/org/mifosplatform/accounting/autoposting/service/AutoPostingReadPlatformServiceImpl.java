@@ -90,7 +90,7 @@ public class AutoPostingReadPlatformServiceImpl implements AutoPostingReadPlatfo
 
             OfficeData officeData = null;
             if (officeId != null) {
-                officeData = OfficeData.dropdown(officeId, officeName, null, null);
+                officeData = OfficeData.dropdown(officeId, officeName, null, null, null);
             }
 
            // SavingsProductData savingsProductData = null;
