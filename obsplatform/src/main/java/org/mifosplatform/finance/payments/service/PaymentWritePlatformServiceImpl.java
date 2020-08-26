@@ -197,9 +197,14 @@ public class PaymentWritePlatformServiceImpl implements PaymentWritePlatformServ
 				JSONArray row = retriveBasicValidationTableData(officeId);
 	
 				BigDecimal minimumAmount = (row == null) ? BigDecimal.ZERO : new BigDecimal(row.getDouble(3));
-				final BigDecimal paidAmount = command.bigDecimalValueOfParameterNamed("amountPaid");
+				BigDecimal totalPayment = command.bigDecimalValueOfParameterNamed("amountPaid");
+				final boolean useWalletAmount = command.booleanPrimitiveValueOfParameterNamed("useWalletAmount");
+				if(useWalletAmount){
+					final BigDecimal walletAmount = command.bigDecimalValueOfParameterNamed("walletAmount");
+					totalPayment = totalPayment.add(walletAmount);
+				}
 				
-				if(paidAmount.compareTo(minimumAmount) == -1 ){
+				if(totalPayment.compareTo(minimumAmount) == -1 ){
 					throw new PaymentamountNotEqualToMinimumAmount(minimumAmount);
 				}
 			}
